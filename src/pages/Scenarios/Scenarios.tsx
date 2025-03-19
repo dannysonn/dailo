@@ -1,12 +1,11 @@
-import {Checkbox, Tabs, TabsProps} from "antd";
+import {Button, Modal, Tabs, TabsProps} from "antd";
 import {scenarios} from "../../scenariosMocks.ts";
 import {useState} from "react";
-
-import css from './Scenarios.module.scss'
+import '@xyflow/react/dist/style.css';
 import {ScenarioActionsList} from "../../components/ScenarioActionsList/ScenarioActionsList.tsx";
-import {useScenarioSteps} from "./hooks/useScenarioSteps.ts";
-import {ToSteps} from "../../components/ToSteps/ToSteps.tsx";
-import {FromSteps} from "../../components/FromSteps/FromSteps.tsx";
+import {ScenariosGraph} from "../../components/ScenariosGraph/ScenariosGraph.tsx";
+import {nodeConfig} from "../../components/ScenariosGraph/utils/configs.ts";
+import {useNodesAndEdges} from "../../components/ScenariosGraph/hooks/useNodesAndEdges.ts";
 
 const items: TabsProps['items'] = scenarios.map((scenario) => {
     return {
@@ -17,44 +16,44 @@ const items: TabsProps['items'] = scenarios.map((scenario) => {
 })
 
 export const Scenarios = () => {
-    const [currentScenario, setCurrentScenario] = useState(scenarios[0].scenario_id);
-    const [isVerticalView, setIsVerticalView] = useState(false);
+    const [currentScenarioId, setCurrentScenario] = useState(scenarios[0].scenario_id);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const {initialNodes, initialEdges} = useNodesAndEdges(scenarios, currentScenarioId, nodeConfig)
+
+
+    const showModal = () => {
+        setIsModalOpen(true);
+    };
+
+    const handleOk = () => {
+        setIsModalOpen(false);
+    };
+
+    const handleCancel = () => {
+        setIsModalOpen(false);
+    };
 
     const handleTabChange = (activeKey: string) => {
         setCurrentScenario(Number(activeKey));
     }
-
-    const {fromSteps, toSteps} = useScenarioSteps(currentScenario, scenarios);
-
     return (
         <main>
-            <Checkbox onChange={() => setIsVerticalView((prev) => !prev)}>Vertical view</Checkbox>
-
             <h1>Сценарии</h1>
 
-            <div className={css.Scenarios__content}>
-                <div className={css.ScenarioSteps}>
-                    {fromSteps.length > 0 &&
-                        <div className={css.ScenarioSteps}>
-                            <FromSteps fromSteps={fromSteps} currentScenario={currentScenario}
-                                       isVerticalView={isVerticalView}/>
-                        </div>
-                    }
+            <Button type="primary" onClick={showModal}>
+                Просмотреть связи
+            </Button>
+            <Modal title="Basic Modal" open={isModalOpen} onOk={handleOk} onCancel={handleCancel} width={'50vw'}
+                   height={'50vh'}>
+                <ScenariosGraph initialNodes={initialNodes} initialEdges={initialEdges}/>
+            </Modal>
 
-                    {toSteps &&
-                        <div className={css.ScenarioSteps}>
-                            <ToSteps toSteps={toSteps} currentScenario={currentScenario}
-                                     isVerticalView={isVerticalView}/>
-                        </div>
-                    }
-                </div>
 
-                <Tabs
-                    defaultActiveKey={currentScenario.toString()}
-                    items={items}
-                    onChange={(activeKey) => handleTabChange(activeKey)}
-                />
-            </div>
+            <Tabs
+                defaultActiveKey={currentScenarioId.toString()}
+                items={items}
+                onChange={(activeKey) => handleTabChange(activeKey)}
+            />
         </main>
     )
 }
